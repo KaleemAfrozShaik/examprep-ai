@@ -50,6 +50,14 @@ app.use('/api/credit',creditRouter);
 //   "Server is running on \x1b[34mhttps://localhost:8000\x1b[0m");
 // })
 
-connectDB();  
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("DB Connection Error:", error);
+    return res.status(500).json({ message: "Database connection failed" });
+  }
+}); 
 
 export default app;
