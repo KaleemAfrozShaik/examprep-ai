@@ -12,7 +12,7 @@ import Pricing from "./pages/Pricing.jsx";
 import PaymentSuccess from "./pages/PaymentSuccess.jsx";
 import PaymentFailed from "./pages/PaymentFailed.jsx";
 import { motion } from "motion/react";
-export const serverUrl = import.meta.env.VITE_SERVER_URL || "http://localhost:8000"
+export const serverUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000"
 
 
 const App =  () => {

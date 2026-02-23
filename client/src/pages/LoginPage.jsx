@@ -3,6 +3,8 @@ import { useState } from "react";
 import axios from "axios";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../redux/userSlice";
+import { serverUrl } from "../App";
+import React from "react";
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -18,8 +20,7 @@ const Login = () => {
     try {
       setLoading(true);
 
-      const response = await axios.post(
-        "http://localhost:8000/api/auth/login",
+      const response = await axios.post(serverUrl +"/api/auth/login",
         { email, password },
         { withCredentials: true }
       );

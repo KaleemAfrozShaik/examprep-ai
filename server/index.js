@@ -43,9 +43,13 @@ app.use('/api/notes',notesRouter);
 app.use('/api/pdf/',pdfRouter);
 app.use('/api/credit',creditRouter);
 
-app.listen(PORT, async (req,res)=>{
-  console.log("Starting server, please wait");
-  await connectDB();
-  console.log(
-  "Server is running on \x1b[34mhttps://localhost:8000\x1b[0m");
-})
+// app.listen(PORT, async (req,res)=>{
+//   console.log("Starting server, please wait");
+//   await connectDB();
+//   console.log(
+//   "Server is running on \x1b[34mhttps://localhost:8000\x1b[0m");
+// })
+
+connectDB();  
+
+export default app;
