@@ -2,8 +2,7 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import logo from "../assets/logo.png";
 import { useDispatch, useSelector } from "react-redux";
-import axios from "axios";
-import { serverUrl } from "../App";
+import axios from "../api/axios";
 import { setUserData } from "../redux/userSlice";
 import { useNavigate } from "react-router-dom";
 
@@ -16,9 +15,7 @@ function Navbar() {
   const dispatch = useDispatch();
   const handleSignOut = async () => {
     try {
-      await axios.get(serverUrl + "/api/auth/logout", {
-        withCredentials: true,
-      });
+      await axios.get("/api/auth/logout");
       dispatch(setUserData(null));
       navigate("/auth");
     } catch (error) {

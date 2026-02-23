@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
-import axios from "axios";
-import { serverUrl } from "../App";
+import axios from "../api/axios";
 import { IoMdArrowRoundBack } from "react-icons/io";
 
 
@@ -17,9 +16,8 @@ function Pricing() {
       setPayingAmount(amount);
       setPaying(true);
       const result = await axios.post(
-        serverUrl + "/api/credit/order",
-        { amount },
-        { withCredentials: true },
+        "/api/credit/order",
+        { amount }
       );
 
       if (result.data.url) {

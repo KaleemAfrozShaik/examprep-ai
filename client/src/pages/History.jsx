@@ -1,6 +1,5 @@
-import axios from "axios";
+import axios from "../api/axios";
 import React, { useEffect, useState } from "react";
-import { serverUrl } from "../App";
 import { AnimatePresence, motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -21,9 +20,7 @@ function History() {
   useEffect(() => {
     const myNotes = async () => {
       try {
-        const res = await axios.get(serverUrl + "/api/notes/getnotes", {
-          withCredentials: true,
-        });
+        const res = await axios.get("/api/notes/getnotes");
         console.log(res.data);
         setTopics(Array.isArray(res.data) ? res.data : []);
       } catch (error) {
@@ -37,9 +34,7 @@ function History() {
     setLoading(true);
     setActiveNoteId(noteId);
     try {
-      const res = await axios.get(serverUrl + `/api/notes/${noteId}`, {
-        withCredentials: true,
-      });
+      const res = await axios.get(`/api/notes/${noteId}`);
 
       setSelectedNote(res.data.content);
       setLoading(false);

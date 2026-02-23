@@ -1,9 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import axios from "axios";
+import axios from "../api/axios";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../redux/userSlice.js";
-import { serverUrl } from "../App";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -23,9 +22,8 @@ const Register = () => {
     try {
       setLoading(true);
       const response = await axios.post(
-        serverUrl + "/api/auth/register",
-        { name, email, password },
-        { withCredentials: true },
+        "/api/auth/register",
+        { name, email, password }
       );
       dispatch(setUserData(response.data.user));
       navigate("/");
