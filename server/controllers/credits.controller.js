@@ -86,7 +86,7 @@ export const stripeWebhook = async (req, res) => {
         $inc: { credits: creditsToAdd },
         $set: { isCreditsAvailable: true },
       },
-      { new: true },
+      { returnDocument: "after" }
     );
   }
 

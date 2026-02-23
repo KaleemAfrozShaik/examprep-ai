@@ -25,11 +25,21 @@ app.post(
 
 app.use(cors({
   origin: process.env.CLIENT_URL || "http://localhost:5173",
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+  credentials: true
 }));
 app.use(express.json());
 app.use(cookieParser());
+
+
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("DB Connection Error:", error);
+    return res.status(500).json({ message: "Database connection failed" });
+  }
+}); 
 
 const PORT = process.env.PORT || 8000;
 
@@ -50,14 +60,6 @@ app.use('/api/credit',creditRouter);
 //   "Server is running on \x1b[34mhttps://localhost:8000\x1b[0m");
 // })
 
-app.use(async (req, res, next) => {
-  try {
-    await connectDB();
-    next();
-  } catch (error) {
-    console.error("DB Connection Error:", error);
-    return res.status(500).json({ message: "Database connection failed" });
-  }
-}); 
+
 
 export default app;
