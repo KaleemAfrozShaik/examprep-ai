@@ -23,8 +23,6 @@ export const generateNotes = async (req, res) => {
         }
 
         if (user.credits < 10) {
-            user.isCreditsAvailable = false
-            await user.save()
             return res.status(403).json({
                 message: "Insufficient credits"
             });
@@ -38,7 +36,34 @@ export const generateNotes = async (req, res) => {
             includeDiagram,
             includeChart
         })
-        const aiResponse = await generateGeminiResponse(prompt)
+
+        // Atomic deduction
+        const updatedUser = await UserModel.findOneAndUpdate(
+            { _id: user._id, credits: { $gte: 10 } },
+            { 
+                $inc: { credits: -10 },
+                // We'll update isCreditsAvailable based on the NEW credit count after deduction
+            },
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(403).json({ message: "Insufficient credits" });
+        }
+
+        // If credits dropped to 0 or less (though $gte 10 should prevent < 0 if strictly 10), update flag
+        if (updatedUser.credits < 10) {
+            await UserModel.findByIdAndUpdate(user._id, { $set: { isCreditsAvailable: false } });
+        }
+
+        let aiResponse;
+        try {
+            aiResponse = await generateGeminiResponse(prompt)
+        } catch (aiError) {
+            // Refund credits if AI fails
+            await UserModel.findByIdAndUpdate(user._id, { $inc: { credits: 10 }, $set: { isCreditsAvailable: true } });
+            throw aiError;
+        }
         
         const notes = await Notes.create({
             user: user._id,
@@ -49,22 +74,16 @@ export const generateNotes = async (req, res) => {
             includeDiagram,
             includeChart,
             content: aiResponse
-
-
         })
 
+        await UserModel.findByIdAndUpdate(user._id, {
+            $push: { notes: notes._id }
+        });
 
-        user.credits -= 10;
-        if (user.credits <= 0) user.isCreditsAvailable = false;
-        if (!Array.isArray(user.notes)) {
-            user.notes = [];
-        }
-        user.notes.push(notes._id);
-        await user.save();
         return res.status(200).json({
             data: aiResponse,
             noteId: notes._id,
-            creditsLeft: user.credits
+            creditsLeft: updatedUser.credits - 0 // Ensure it's the value after deduction
         })
     } catch (error) {
         console.error(error);

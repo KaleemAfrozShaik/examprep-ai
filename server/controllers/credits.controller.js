@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import UserModel from "../models/user.model.js";
+import WebhookEvent from "../models/webhookEvent.model.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -17,7 +18,7 @@ const CREDIT_MAP = {
 
 export const createCreditsOrder = async (req, res) => {
   try {
-    const userId = req.user._id;;
+    const userId = req.user._id;
     const { amount } = req.body;
 
     if (!CREDIT_MAP[amount]) {
@@ -70,25 +71,45 @@ export const stripeWebhook = async (req, res) => {
     return res.status(400).send("Webhook Error");
   }
 
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object;
+  // Idempotency check: Has this event already been processed?
+  try {
+    if (event.type === "checkout.session.completed") {
+      const existingEvent = await WebhookEvent.findOne({ stripeEventId: event.id });
+      if (existingEvent) {
+        console.log(`Webhook event ${event.id} already processed. Skipping.`);
+        return res.json({ received: true, alreadyProcessed: true });
+      }
 
-    const userId = session.metadata.userId;
-    const creditsToAdd = Number(session.metadata.credits);
+      const session = event.data.object;
+      const userId = session.metadata.userId;
+      const creditsToAdd = Number(session.metadata.credits);
 
-    if (!userId || !creditsToAdd) {
-      return res.status(400).json({ message: "Invalid metadata" });
+      if (!userId || !creditsToAdd) {
+        return res.status(400).json({ message: "Invalid metadata" });
+      }
+
+      // Record event before updating user to ensure we don't double count if update fails/retries
+      await WebhookEvent.create({ stripeEventId: event.id });
+
+      const user = await UserModel.findByIdAndUpdate(
+        userId,
+        {
+          $inc: { credits: creditsToAdd },
+          $set: { isCreditsAvailable: true },
+        },
+        { returnDocument: "after" }
+      );
+      
+      if (!user) {
+         // Cleanup event if user not found, so we can retry
+         await WebhookEvent.deleteOne({ stripeEventId: event.id });
+         return res.status(404).json({ message: "User not found" });
+      }
     }
 
-    const user = await UserModel.findByIdAndUpdate(
-      userId,
-      {
-        $inc: { credits: creditsToAdd },
-        $set: { isCreditsAvailable: true },
-      },
-      { returnDocument: "after" }
-    );
+    res.json({ received: true });
+  } catch (error) {
+    console.error("Webhook processing error:", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
   }
-
-  res.json({ received: true });
 };

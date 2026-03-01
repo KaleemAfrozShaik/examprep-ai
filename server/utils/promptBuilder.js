@@ -1,3 +1,11 @@
+const sanitizeInput = (text) => {
+  if (typeof text !== "string") return "";
+  return text
+    .replace(/[<>]/g, "") 
+    .replace(/\b(ignore|instead|forget|system|instruction|prompt)\b/gi, "") 
+    .slice(0, 500); 
+};
+
 export const buildPrompt = ({
   topic,
   classLevel,
@@ -6,6 +14,10 @@ export const buildPrompt = ({
   includeDiagram,
   includeChart
 }) => {
+  const cleanTopic = sanitizeInput(topic);
+  const cleanClassLevel = sanitizeInput(classLevel);
+  const cleanExamType = sanitizeInput(examType);
+
   return `
 You are a STRICT JSON generator for an exam preparation system.
 
@@ -14,12 +26,12 @@ You are a STRICT JSON generator for an exam preparation system.
 - Do NOT use emojis inside text values
 
 TASK:
-Convert the given topic into exam-focused notes.
+Convert the following specific topic into exam-focused notes:
+[TOPIC_START] ${cleanTopic} [TOPIC_END]
 
-INPUT:
-Topic: ${topic}
-Class Level: ${classLevel || "Not specified"}
-Exam Type: ${examType || "General"}
+CONTEXT:
+Class Level: ${cleanClassLevel || "Not specified"}
+Exam Type: ${cleanExamType || "General"}
 Revision Mode: ${revisionMode ? "ON" : "OFF"}
 Include Diagram: ${includeDiagram ? "YES" : "NO"}
 Include Charts: ${includeChart ? "YES" : "NO"}
